@@ -2,7 +2,6 @@ Boolean {
 	*new { ^this.shouldNotImplement(thisMethod) }
 	*newCopyArgs { ^this.shouldNotImplement(thisMethod) }
 	xor { arg bool; ^(this === bool).not }
-	if { ^this.subclassResponsibility(thisMethod) }
 	not { ^this.subclassResponsibility(thisMethod) }
 	&& { ^this.subclassResponsibility(thisMethod) }
 	|| { ^this.subclassResponsibility(thisMethod) }
@@ -39,7 +38,6 @@ Boolean {
 }
 
 True : Boolean {
-	if { arg trueFunc, falseFunc; ^trueFunc.value }
 	not { ^false }
 	&& { arg that; ^that.value }
 	|| { arg that; ^this }
@@ -51,7 +49,6 @@ True : Boolean {
 }
 
 False : Boolean  {
-	if { arg trueFunc, falseFunc; ^falseFunc.value }
 	not { ^true }
 	&& { arg that; ^this }
 	|| { arg that; ^that.value }

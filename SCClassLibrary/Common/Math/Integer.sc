@@ -92,16 +92,6 @@ Integer : SimpleNumber {
 		});
 		^array
 	}
-	asDigits { arg base=10, numDigits;
-		var array, num = this;
-		numDigits = numDigits ?? { (this.log / base.log + 1e-10).asInteger + 1 };
-		array = Array.new(numDigits);
-		numDigits.do {
-			array = array.addFirst(num % base);
-			num = num div: base
-		}
-		^array
-	}
 
 	nextPowerOfTwo {
 		_NextPowerOfTwo
@@ -169,14 +159,6 @@ Integer : SimpleNumber {
 		});
 		^nil
 		*/
-	}
-
-	factorial {
-		if(this > 12) {
-			Error("factorial: insufficient integer precision for this number (%). "
-				"Use Float.factorial instead.".format(this)).throw
-		};
-		^super.factorial.asInteger
 	}
 
 	// exit the program and return the result code to unix shell

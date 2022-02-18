@@ -558,9 +558,6 @@ SimpleNumber : Number {
 			a * (m * exp(x) * rTau + 1) / (n * exp(x) * rTau + 1)
 		}
 	}
-	gauss { |standardDeviation|
-		^(((sqrt(-2 * log(1.0.rand)) * sin(2pi.rand)) * standardDeviation) + this)
-	}
 	gaussCurve { |a = 1.0, b = 0.0, c = 1.0|
 		^a * (exp(squared(this - b) / (-2.0 * squared(c))))
 	}
@@ -629,41 +626,6 @@ SimpleNumber : Number {
 		size = floor((last - this) / step + 0.001).asInteger + 1;
 		^Array.series(size, this, step) */
 	}
-
-	seriesIter { |second, last|
-		var step, size;
-
-		if(second.isNil) {
-			last = last ? inf;
-			step = if(this < last, 1, -1);
-		}{
-			last ?? { last = if(second < this, -inf, inf) };
-			step = second - this;
-		};
-
-		^if(step < 0) {
-			r {
-				var val = this;
-				while {
-					val >= last;
-				} {
-					val.yield;
-					val = val + step;
-				};
-			}
-		} {
-			r {
-				var val = this;
-				while {
-					val <= last;
-				} {
-					val.yield;
-					val = val + step;
-				}
-			}
-		}
-	}
-
 
 	degreeToKey { |scale, stepsPerOctave = 12|
 		var scaleDegree = this.round.asInteger;
