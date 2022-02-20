@@ -111,31 +111,6 @@ Object  {
 			this.performList(selector,args)
 		})
 	}
-	multiChannelPerform { arg selector ... args;
-		^flop([this, selector] ++ args).collect { |item|
-			performList(item[0], item[1], item[2..])
-		}
-	}
-
-	performWithEnvir { |selector, envir|
-		var argNames, args;
-		var method = this.class.findRespondingMethodFor(selector);
-
-		if(method.isNil) { ^this.doesNotUnderstand(selector) };
-
-		argNames = method.argNames.drop(1);
-		args = method.prototypeFrame.drop(1);
-		argNames.do { |name, i|
-			var val = envir[name];
-			val !? { args[i] = val };
-		};
-
-		^this.performList(selector, args)
-	}
-
-	performKeyValuePairs { |selector, pairs|
-		^this.performWithEnvir(selector, ().putPairs(pairs))
-	}
 
 	// copying
 	copy { ^this.shallowCopy }
@@ -195,22 +170,6 @@ Object  {
 			});
 		});
 		^true
-	}
-	instVarHash { arg instVarNames;
-		var indices, res = this.class.hash;
-		if(this.instVarSize == 0) {
-			^res
-		};
-		indices = if(instVarNames.notNil) {
-			instVarNames.collect(this.slotIndex(_))
-		} {
-			(0..this.instVarSize-1)
-		};
-		indices.do { |i|
-			var obj = this.instVarAt(i);
-			res = res << 1 bitXor: obj.hash;  // encode slot order by left shifting
-		};
-		^res
 	}
 
 	basicHash { _ObjectHash; ^this.primitiveFailed }
@@ -417,20 +376,6 @@ Object  {
 			stream << ".new"
 		}
 	}
-	simplifyStoreArgs { arg args;
-		var res = Array.new, newMethod, methodArgs;
-		newMethod = this.class.class.findRespondingMethodFor(\new);
-		methodArgs = newMethod.prototypeFrame.drop(1);
-		args.size.reverseDo { |i|
-			if(methodArgs[i] != args[i]) {
-				^args.keep(i + 1)
-			}
-		}
-		^[]
-	}
-	storeArgs { ^#[] }
-	storeModifiersOn { arg stream;}
-
 
 	as { arg aSimilarClass; ^aSimilarClass.newFrom(this) }
 	dereference { ^this } // see Ref::dereference
@@ -469,12 +414,6 @@ Object  {
 	}
 	removeFunc { arg function; if(this === function) { ^nil } }
 	replaceFunc { arg find, replace; if(this === find) { ^replace } }
-	addFuncTo { arg variableName ... functions;
-		this.perform(variableName.asSetter, this.perform(variableName).addFunc(*functions))
-	}
-	removeFuncFrom { arg variableName, function;
-		this.perform(variableName).removeFunc(function)
-	}
 
 	// looping
 	while { arg body;
@@ -512,43 +451,6 @@ Object  {
 
 	// dependancy support
 	*initClass { dependantsDictionary = IdentityDictionary.new(4); }
-	dependants {
-		^dependantsDictionary.at(this) ?? { IdentitySet.new };
-	}
-	changed { arg what ... moreArgs;
-		dependantsDictionary.at(this).copy.do({ arg item;
-			item.update(this, what, *moreArgs);
-		});
-	}
-	addDependant { arg dependant;
-		var theDependants;
-		theDependants = dependantsDictionary.at(this);
-		if(theDependants.isNil,{
-			theDependants = IdentitySet.new.add(dependant);
-			dependantsDictionary.put(this, theDependants);
-		},{
-			theDependants.add(dependant);
-		});
-	}
-	removeDependant { arg dependant;
-		var theDependants;
-		theDependants = dependantsDictionary.at(this);
-		if (theDependants.notNil, {
-			theDependants.remove(dependant);
-			if (theDependants.size == 0, {
-				dependantsDictionary.removeAt(this);
-			});
-		});
-	}
-	release {
-		this.releaseDependants;
-	}
-	releaseDependants {
-		dependantsDictionary.removeAt(this);
-	}
-	update { arg theChanged, theChanger;	// respond to a change in a model
-	}
-
 
 	// instance specific method support
 	addUniqueMethod { arg selector, function;
@@ -806,150 +708,6 @@ Object  {
 	instVarPut { arg index, item;
 		// index can be an integer or symbol.
 		_InstVarPut;
-		^this.primitiveFailed;
-	}
-
-	//////////// ARCHIVING ////////////
-
-	writeArchive { arg pathname;
-		^this.writeTextArchive(pathname)
-	}
-	*readArchive { arg pathname;
-		^this.readTextArchive(pathname)
-	}
-	asArchive {
-		^this.asTextArchive;
-	}
-
-	initFromArchive {}
-
-	archiveAsCompileString { ^false }
-	archiveAsObject { ^this.archiveAsCompileString.not }
-	checkCanArchive {}
-
-	// archiving
-	writeTextArchive { arg pathname;
-		var text = this.asTextArchive;
-		var file = File(pathname, "w");
-		if(file.isOpen) {
-			protect {
-				file.write(text);
-			} { file.close };
-		} {
-			MethodError("Could not open file % for writing".format(pathname.asCompileString), this).throw;
-		}
-	}
-	*readTextArchive { arg pathname;
-		^pathname.load
-	}
-	asTextArchive {
-		var objects, list, stream, firsttime = true;
-
-		if (this.archiveAsCompileString) {
-			this.checkCanArchive;
-			^this.asCompileString ++ "\n"
-		};
-
-		objects = IdentityDictionary.new;
-
-		this.getContainedObjects(objects);
-
-		stream = CollStream.new;
-		stream << "var o, p;\n";
-
-		list = List.newClear(objects.size);
-		objects.keysValuesDo {|obj, index| list[index] = obj };
-
-		stream << "o = [";
-		list.do {|obj, i|
-			var size;
-			if (i != 0) { stream << ",  "; };
-			if ((i & 3) == 0) { stream << "\n\t" };
-			obj.checkCanArchive;
-			if (obj.archiveAsCompileString) {
-				stream << obj.asCompileString;
-			}{
-				size = obj.indexedSize;
-				stream << obj.class.name << ".prNew";
-				if (size > 0) {
-					stream << "(" << size << ")"
-				};
-			};
-		};
-		stream << "\n];\np = [";
-		// put in slots
-		firsttime = true;
-		list.do {|obj, i|
-			var slots;
-			if (obj.archiveAsCompileString.not) {
-				slots = obj.getSlots;
-				if (slots.size > 0) {
-					if (firsttime.not) { stream << ",  "; };
-					firsttime = false;
-					stream << "\n\t// " << obj.class.name;
-					stream << "\n\t";
-					stream << i << ", [ ";
-					if (obj.isKindOf(ArrayedCollection)) {
-						slots.do {|slot, j|
-							var index;
-							if (j != 0) { stream << ",  "; };
-							if ((j != 0) && ((j & 3) == 0)) { stream << "\n\t\t" };
-							index = objects[slot];
-							if (index.isNil) {
-								stream << slot.asCompileString;
-							}{
-								stream << "o[" << index << "]";
-							};
-						};
-					}{
-						slots.pairsDo {|key, slot, j|
-							var index;
-							if (j != 0) { stream << ",  "; };
-							if ((j != 0) && ((j & 3) == 0)) { stream << "\n\t\t" };
-							stream << key << ": ";
-							index = objects[slot];
-							if (index.isNil) {
-								stream << slot.asCompileString;
-							}{
-								stream << "o[" << index << "]";
-							};
-						};
-					};
-					stream << " ]";
-				};
-			};
-		};
-		stream << "\n];\n";
-
-		stream << "prUnarchive(o,p);\n";
-		^stream.contents
-	}
-	getContainedObjects { arg objects;
-		if (objects[this].notNil) {^this};
-		objects[this] = objects.size;
-
-		if (this.archiveAsCompileString.not) {
-			this.slotsDo {|key, slot|
-				if (slot.archiveAsObject) {
-					slot.getContainedObjects(objects);
-				};
-			};
-		};
-
-	}
-	// old binary archiving
-	// this will break if the instance vars change !
-	// not recommended
-	writeBinaryArchive { arg pathname;
-		_WriteArchive
-		^this.primitiveFailed;
-	}
-	*readBinaryArchive { arg pathname;
-		_ReadArchive
-		^this.primitiveFailed;
-	}
-	asBinaryArchive {
-		_AsArchive
 		^this.primitiveFailed;
 	}
 

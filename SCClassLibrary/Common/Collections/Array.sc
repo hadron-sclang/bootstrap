@@ -25,9 +25,6 @@ Array[slot] : ArrayedCollection {
 		_ArrayMirror2
 		^this.primitiveFailed
 	}
-	stutter { |n=2|
-		^this.dupEach(n);
-	}
 	dupEach { | n=2 |
 		_ArrayDupEach
 		^this.primitiveFailed
@@ -35,60 +32,6 @@ Array[slot] : ArrayedCollection {
 	rotate { arg n=1;
 		_ArrayRotate
 		^this.primitiveFailed
-	}
-	pyramid { arg patternType=1; // an integer from 1-10
-		_ArrayPyramid
-		^this.primitiveFailed
-	}
-	pyramidg { arg patternType=1;
-		var list = [];
-		var lastIndex = this.lastIndex;
-		if (patternType == 1) {
-			for (0,lastIndex) {|i| list = list.add(this[0..i]) };
-			^list
-		};
-		if (patternType == 2) {
-			for (0,lastIndex) {|i| list = list.add(this[lastIndex-i..lastIndex]) };
-			^list
-		};
-		if (patternType == 3) {
-			for (lastIndex,0) {|i| list = list.add(this[0..i]) };
-			^list
-		};
-		if (patternType == 4) {
-			for (0,lastIndex) {|i| list = list.add(this[i..lastIndex]) };
-			^list
-		};
-		if (patternType == 5) {
-			for (0,lastIndex)   {|i| list = list.add(this[0..i]) };
-			for (lastIndex-1,0) {|i| list = list.add(this[0..i]) };
-			^list
-		};
-		if (patternType == 6) {
-			for (0,lastIndex)   {|i| list = list.add(this[lastIndex-i..lastIndex]) };
-			for (lastIndex-1,0) {|i| list = list.add(this[lastIndex-i..lastIndex]) };
-			^list
-		};
-		if (patternType == 7) {
-			for (lastIndex,0) {|i| list = list.add(this[0..i]) };
-			for (1,lastIndex) {|i| list = list.add(this[0..i]) };
-			^list
-		};
-		if (patternType == 8) {
-			for (0,lastIndex)   {|i| list = list.add(this[i..lastIndex]) };
-			for (lastIndex-1,0) {|i| list = list.add(this[i..lastIndex]) };
-			^list
-		};
-		if (patternType == 9) {
-			for (0,lastIndex) {|i| list = list.add(this[0..i]) };
-			for (1,lastIndex) {|i| list = list.add(this[i..lastIndex]) };
-			^list
-		};
-		if (patternType == 10) {
-			for (0,lastIndex)   {|i| list = list.add(this[lastIndex-i..lastIndex]) };
-			for (lastIndex-1,0) {|i| list = list.add(this[0..i]) };
-			^list
-		};
 	}
 	sputter { arg probability=0.25, maxlen = 100;
 		var i=0;
@@ -210,9 +153,6 @@ Array[slot] : ArrayedCollection {
 			Error("source: Not an Array of OutputProxy(s)\n").throw;
 		});
 	}
-	asUGenInput { arg for; ^this.collect(_.asUGenInput(for)) }
-	asAudioRateInput { arg for; ^this.collect(_.asAudioRateInput(for)) }
-	asControlInput { ^this.collect(_.asControlInput) }
 
 	isValidUGenInput { ^true }
 	numChannels { ^this.size }

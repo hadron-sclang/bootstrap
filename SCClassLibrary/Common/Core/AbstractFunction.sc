@@ -11,9 +11,6 @@ AbstractFunction {
 	reverseComposeBinaryOp { arg aSelector, something, adverb;
 		^BinaryOpFunction.new(aSelector, something, this, adverb);
 	}
-	composeNAryOp { arg aSelector, anArgList;
-		^NAryOpFunction.new(aSelector, this, anArgList)
-	}
 
 	// double dispatch for mixed operations
 	performBinaryOpOnSimpleNumber { arg aSelector, aNumber, adverb;
@@ -165,61 +162,11 @@ AbstractFunction {
 	not { ^this.composeUnaryOp('not') }
 	ref { ^this.composeUnaryOp('asRef') }
 
-	// nary operators
-	clip { arg lo, hi; ^this.composeNAryOp('clip', [lo,hi])  }
-	wrap { arg lo, hi; ^this.composeNAryOp('wrap', [lo,hi])  }
-	fold { arg lo, hi; ^this.composeNAryOp('fold', [lo,hi])  }
-	blend { arg that, blendFrac = 0.5;
-		^this.composeNAryOp('blend', [that, blendFrac])
-	}
-	linlin { arg inMin, inMax, outMin, outMax, clip=\minmax;
-		^this.composeNAryOp('linlin', [inMin, inMax, outMin, outMax, clip])
-	}
-	linexp { arg inMin, inMax, outMin, outMax, clip=\minmax;
-		^this.composeNAryOp('linexp', [inMin, inMax, outMin, outMax, clip])
-	}
-	explin { arg inMin, inMax, outMin, outMax, clip=\minmax;
-		^this.composeNAryOp('explin', [inMin, inMax, outMin, outMax, clip])
-	}
-	expexp { arg inMin, inMax, outMin, outMax, clip=\minmax;
-		^this.composeNAryOp('expexp', [inMin, inMax, outMin, outMax, clip])
-	}
-	lincurve { arg inMin = 0, inMax = 1, outMin = 0, outMax = 1, curve = -4, clip = \minmax;
-		^this.composeNAryOp('lincurve', [inMin, inMax, outMin, outMax, curve, clip])
-	}
-	curvelin { arg inMin = 0, inMax = 1, outMin = 0, outMax = 1, curve = -4, clip = \minmax;
-		^this.composeNAryOp('curvelin', [inMin, inMax, outMin, outMax, curve, clip])
-	}
-	bilin { arg inCenter, inMin, inMax, outCenter, outMin, outMax, clip=\minmax;
-		^this.composeNAryOp('bilin', [inCenter, inMin, inMax, outCenter, outMin, outMax, clip])
-	}
-	biexp { arg inCenter, inMin, inMax, outCenter, outMin, outMax, clip=\minmax;
-		^this.composeNAryOp('biexp', [inCenter, inMin, inMax, outCenter, outMin, outMax, clip])
-	}
-	moddif { arg function = 0.0, mod = 1.0;
-		^this.composeNAryOp('moddif', [function, mod])
-	}
-
-	degreeToKey { arg scale, stepsPerOctave=12;
-		^this.composeNAryOp('degreeToKey', [scale, stepsPerOctave])
-	}
-
 	degrad { ^this.composeUnaryOp('degrad') }
 	raddeg { ^this.composeUnaryOp('raddeg') }
 
 	applyTo { arg ... args;
 		^this.valueArray(args)
-	}
-
-	<> { arg that;
-		// function composition
-		^{|...args| this.value(that.value(*args)) }
-	}
-
-	sampled{ |n=80,from=0.0,to=1.0|
-		var valueArray;
-		valueArray = (from,(to-from)/(n-1) .. to).collect{|x| this.value(x) };
-		^{ |x| valueArray.blendAt( ((x.clip(from,to)-from)/(to-from))*(n-1) ) }
 	}
 
 	// embed in ugen graph
@@ -290,82 +237,3 @@ BinaryOpFunction : AbstractFunction {
 
 	}
 }
-
-NAryOpFunction : AbstractFunction {
-	var selector, a, arglist;
-
-	*new { arg selector, a, arglist;
-		^super.newCopyArgs(selector, a, arglist)
-	}
-	value { arg ... args;
-		^a.valueArray(args).performList(selector, arglist.collect(_.valueArray(args)))
-	}
-	valueArray { arg args;
-		^a.valueArray(args).performList(selector, arglist.collect(_.valueArray(args)))
-	}
-	valueEnvir { arg ... args;
-		^a.valueArrayEnvir(args).performList(selector, arglist.collect(_.valueArrayEnvir(args)))
-	}
-	valueArrayEnvir { arg ... args;
-		^a.valueArrayEnvir(args).performList(selector, arglist.collect(_.valueArrayEnvir(args)))
-	}
-	functionPerformList { arg selector, arglist;
-		^this.performList(selector, arglist)
-	}
-	storeOn { arg stream;
-		stream <<< a << "." << selector << "(" <<<* arglist << ")"
-
-	}
-
-}
-
-FunctionList : AbstractFunction {
-	var <>array, <flopped=false;
-
-	*new { arg functions;
-		^super.newCopyArgs(functions)
-	}
-	addFunc { arg ... functions;
-		if(flopped) { Error("cannot add a function to a flopped FunctionList").throw };
-		array = array.addAll(functions)
-	}
-	removeFunc { arg function;
-		array.remove(function);
-		if(array.size < 2) { ^array[0] };
-	}
-
-	replaceFunc { arg find, replace;
-		array = array.replace(find, replace);
-	}
-
-	value { arg ... args;
-		var res = array.collectCopy(_.valueArray(args));
-		^if(flopped) { res.flop } { res }
-	}
-	valueArray { arg args;
-		var res = array.collectCopy(_.valueArray(args));
-		^if(flopped) { res.flop } { res }
-	}
-	valueEnvir { arg ... args;
-		var res = array.collectCopy(_.valueArrayEnvir(args));
-		^if(flopped) { res.flop } { res }
-	}
-	valueArrayEnvir { arg args;
-		var res = array.collectCopy(_.valueArrayEnvir(args));
-		^if(flopped) { res.flop } { res }
-	}
-	do { arg function;
-		array.do(function)
-	}
-	flop {
-		if(flopped.not) { array = array.collect(_.flop) }; flopped = true;
-	}
-	envirFlop {
-		if(flopped.not) { array = array.collect(_.envirFlop) }; flopped = true;
-	}
-	storeArgs { ^[array] }
-	copy { ^super.copy.array_(array.copy) }
-}
-
-
-

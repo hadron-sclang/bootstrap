@@ -307,11 +307,6 @@ ArrayedCollection : SequenceableCollection {
 		};
 	}
 
-	perfectShuffle {
-		if(this.size < 2) { ^this.copy };
-		^this[(0 .. this.size div: 2 - 1).dupEach + [0, this.size + 1 div: 2]]
-	}
-
 	performInPlace { arg selector, from, to, argList;
 		^this.overWrite(this.copyRange(from, to).performList(selector, argList), from)
 	}
@@ -330,12 +325,6 @@ ArrayedCollection : SequenceableCollection {
 	shape {
 		// this assumes every element has the same shape
 		^[this.size] ++ this[0].shape
-	}
-	reshape { arg ... shape;
-		var size = shape.product;
-		var result = this.flat.wrapExtend(size);
-		shape[1..].reverseDo {|n| result = result.clump(n) };
-		^result
 	}
 	reshapeLike { arg another, indexing=\wrapAt;
 		var index = 0;
@@ -388,23 +377,6 @@ ArrayedCollection : SequenceableCollection {
 		^this.collect {|item| item.bubble(depth-1, levels) }
 	}
 
-
-	slice { arg ... cuts;
-		var firstCut, index, list;
-		if (cuts.size == 0) { ^this.copy };
-
-		firstCut = cuts[0];
-		if (firstCut.isNil) { list = this.copy } { list = this[firstCut.asArray] };
-		if (cuts.size == 1) {
-			^list.unbubble
-		}{
-			cuts = cuts[1..];
-			^list.collect {|item| item.slice(*cuts) }.unbubble
-		}
-	}
-	*iota { arg ... sizes;
-		^(0..sizes.product-1).reshape(*sizes)
-	}
 
 
 	// random distribution table
