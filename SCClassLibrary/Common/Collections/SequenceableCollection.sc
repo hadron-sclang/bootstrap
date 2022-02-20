@@ -566,23 +566,7 @@ SequenceableCollection : Collection {
 		});
 		^list
 	}
-
-	flopWith { |func|
-		var maxsize = this.maxValue { |sublist|
-			if(sublist.isSequenceableCollection) { sublist.size } { 1 }
-		};
-
-		^this.species.fill(maxsize, { |i|
-			func.value( *this.collect { |sublist|
-				if(sublist.isSequenceableCollection) {
-					sublist.wrapAt(i)
-				} {
-					sublist
-				}
-			})
-		})
-	}
-
+ 
 	flopTogether { arg ... moreArrays;
 		var standIn, maxSize = 0, array;
 		array = [this] ++ moreArrays;
@@ -719,50 +703,7 @@ SequenceableCollection : Collection {
 		^key.nearestInList(this) + root
 	}
 
-	// supports a variation of Mikael Laurson's rhythm list RTM-notation.
-	convertRhythm {
-		var list, tie;
-		list = List.new;
-		tie = this.convertOneRhythm(list);
-		if (tie > 0.0, { list.add(tie) });  // check for tie at end of rhythm
-		^list
-	}
-	sumRhythmDivisions {
-		var sum = 0;
-		this.do {|beats|
-			sum = sum + abs(if (beats.isSequenceableCollection) {
-				beats[0];
-			}{
-				beats
-			});
-		};
-		^sum
-	}
-	convertOneRhythm { arg list, tie = 0.0, stretch = 1.0;
-		var beats, divisions, repeats;
-		#beats, divisions, repeats = this;
-		repeats = repeats ? 1;
-		stretch = stretch * beats / divisions.sumRhythmDivisions;
-		repeats.do({
-			divisions.do { |val|
-				if (val.isSequenceableCollection) {
-					tie = val.convertOneRhythm(list, tie, stretch)
-				}{
-					val = val * stretch;
-					if (val > 0.0) {
-						list.add(val + tie);
-						tie = 0.0;
-					}{
-						tie = tie - val
-					};
-				};
-			};
-		});
-		^tie
-	}
-
 	isSequenceableCollection { ^true }
-	containsSeqColl { ^this.any(_.isSequenceableCollection) }
 	isAssociationArray { ^this.at(0).isKindOf(Association) }
 
 	// unary math ops
@@ -934,58 +875,11 @@ SequenceableCollection : Collection {
 	fallingFactorial { |x, i| ^this.multiChannelPerform('fallingFactorial', x, i) }
 	binomialCoefficient { |n, k| ^this.multiChannelPerform('binomialCoefficient', n, k) }
 
-	//  Beta functions:
-	beta { |a, b| ^this.multiChannelPerform('beta', a, b) }
-	//  Incomplete beta functions
-	ibeta { |... args| ^this.multiChannelPerform('ibeta', *args) }
-	ibetaC { |... args| ^this.multiChannelPerform('ibetaC', *args) }
-	betaFull { |... args| ^this.multiChannelPerform('betaFull', *args) }
-	betaFullC { |... args| ^this.multiChannelPerform('betaFullC', *args) }
-	//  Incomplete beta function inverses
-	ibetaInv { |... args| ^this.multiChannelPerform('ibetaInv', *args) }
-	ibetaCInv { |... args| ^this.multiChannelPerform('ibetaCInv', *args) }
-	ibetaInvA { |... args| ^this.multiChannelPerform('ibetaInvA', *args) }
-	ibetaCInvA { |... args| ^this.multiChannelPerform('ibetaCInvA', *args) }
-	ibetaInvB { |... args| ^this.multiChannelPerform('ibetaInvB', *args) }
-	ibetaCInvB { |... args| ^this.multiChannelPerform('ibetaCInvB', *args) }
-	//  Incomplete beta function derivative
-	ibetaDerivative { |... args| ^this.multiChannelPerform('ibetaDerivative', *args) }
-
 	//  Error functions:
 	erf { ^this.performUnaryOp('erf') }
 	erfC { ^this.performUnaryOp('erfC') }
 	erfInv { ^this.performUnaryOp('erfInv') }
 	erfCInv { ^this.performUnaryOp('erfCInv') }
-
-	//  Polynomials:
-	// Legendre (and Associated), Laguerre (and Associated),
-	// Hermite, Chebyshev Polynomials (first & second kind, derivative, zero (root) finder)
-	// See boost documentation regarding the Condon-Shortley phase term of (-1)^m
-	// "http://www.boost.org/doc/libs/1_65_1/libs/math/doc/html/math_toolkit/sf_poly/legendre.html"]
-	legendreP { |n, x| ^this.multiChannelPerform('legendreP', n, x) }
-	legendrePPrime { |n, x| ^this.multiChannelPerform('legendrePPrime', n, x) }
-	legendrePZeros { ^this.performUnaryOp('legendrePZeros') }
-	legendrePAssoc { |... args| ^this.multiChannelPerform('legendrePAssoc', *args) }
-	legendreQ { |n, x| ^this.multiChannelPerform('legendreQ', n, x) }
-	laguerre { |n, x| ^this.multiChannelPerform('laguerre', n, x) }
-	laguerreAssoc { |... args| ^this.multiChannelPerform('laguerreAssoc', *args) }
-	hermite { |n, x| ^this.multiChannelPerform('hermite', n, x) }
-	chebyshevT { |n, x| ^this.multiChannelPerform('chebyshevT', n, x) }
-	chebyshevU { |n, x| ^this.multiChannelPerform('chebyshevU', n, x) }
-	chebyshevTPrime { |n, x| ^this.multiChannelPerform('chebyshevTPrime', n, x) }
-	//  "https://en.wikipedia.org/wiki/Chebyshev_polynomials#Roots_and_extrema"
-	//  "http://mathworld.wolfram.com/ChebyshevPolynomialoftheFirstKind.html"
-	chebyshevTZeros {
-		var n = this.asInteger;
-		^(1..n).collect({ arg k;
-			cos(pi* ((2*k) - 1) / (2*n))
-		});
-	}
-
-	//  Spherical Harmonics:
-	sphericalHarmonic { |... args| ^this.multiChannelPerform('sphericalHarmonic', *args) }
-	sphericalHarmonicR { |... args| ^this.multiChannelPerform('sphericalHarmonicR', *args) }
-	sphericalHarmonicI { |... args| ^this.multiChannelPerform('sphericalHarmonicI', *args) }
 
 	//	Bessel Functions:
 	//  First and second kind, zero finders, modified first and second kinds,
@@ -1018,26 +912,6 @@ SequenceableCollection : Collection {
 	airyBiPrime { ^this.performUnaryOp('airyBiPrime') }
 	airyAiZero { ^this.performUnaryOp('airyAiZero') }
 	airyBiZero { ^this.performUnaryOp('airyBiZero') }
-
-	//  Elliptic Integrals:
-	//  Carlson Form
-	ellintRf { |... args| ^this.multiChannelPerform('ellintRf', *args) }
-	ellintRd { |... args| ^this.multiChannelPerform('ellintRd', *args) }
-	ellintRj { |... args| ^this.multiChannelPerform('ellintRj', *args) }
-	ellintRc { |x, y| ^this.multiChannelPerform('ellintRc', x, y) }
-	ellintRg { |... args| ^this.multiChannelPerform('ellintRg', *args) }
-	//  Legendre Form - First, Second, Third Kind, D
-	ellint1 { |k, phi| ^this.multiChannelPerform('ellint1', k, phi) }
-	ellint1C { ^this.performUnaryOp('ellint1C') }
-	ellint2 { |k, phi| ^this.multiChannelPerform('ellint2', k, phi) }
-	ellint2C { ^this.performUnaryOp('ellint2C') }
-	ellint3 { |... args| ^this.multiChannelPerform('ellint3', *args) }
-	ellint3C { |k, n| ^this.multiChannelPerform('ellint3C', k, n) }
-	ellintD { |k, phi| ^this.multiChannelPerform('ellintD', k, phi) }
-	ellintDC { ^this.performUnaryOp('ellintDC') }
-	//  Jacobi Zeta, Heuman Lambda Functions
-	jacobiZeta { |k, phi| ^this.multiChannelPerform('jacobiZeta', k, phi) }
-	heumanLambda { |k, phi| ^this.multiChannelPerform('heumanLambda', k, phi) }
 
 	//  Jacobi Elliptic Functions:
 	jacobiCd { |k, u| ^this.multiChannelPerform('jacobiCd', k, u) }
@@ -1198,52 +1072,11 @@ SequenceableCollection : Collection {
 		// 'scalar' > 'control' > 'audio'
 	}
 
-	// if we don't catch the special case of an empty array,
-	// Object:multiChannelPerform goes into infinite recursion
-	multiChannelPerform { arg selector ... args;
-		if(this.size > 0) {
-			^super.multiChannelPerform(selector, *args);
-		} {
-			^this.class.new
-		}
-	}
-
 	// this method is for UGen inputs that require Refs to block direct multichannel expansion.
 	// here, we assume this is already an array of Refs, which we simply return.
 	multichannelExpandRef { arg rank;
 		^this
 	}
-
-	// support some UGen convenience methods.
-	// NOTE: don't forget to add a wrapper here when adding a method to UGen or AbstractFunction
-	clip { arg ... args; ^this.multiChannelPerform('clip', *args) }
-	wrap { arg ... args; ^this.multiChannelPerform('wrap', *args) }
-	fold { arg ... args; ^this.multiChannelPerform('fold', *args) }
-	linlin { arg ... args; ^this.multiChannelPerform('linlin', *args) }
-	linexp { arg ... args; ^this.multiChannelPerform('linexp', *args) }
-	explin { arg ... args; ^this.multiChannelPerform('explin', *args) }
-	expexp { arg ... args; ^this.multiChannelPerform('expexp', *args) }
-	lincurve { arg ... args; ^this.multiChannelPerform('lincurve', *args) }
-	curvelin { arg ... args; ^this.multiChannelPerform('curvelin', *args) }
-	bilin { arg ... args; ^this.multiChannelPerform('bilin', *args) }
-	biexp { arg ... args; ^this.multiChannelPerform('biexp', *args) }
-	moddif { arg ... args; ^this.multiChannelPerform('moddif', *args) }
-	range { arg ... args; ^this.multiChannelPerform('range', *args) }
-	exprange { arg ... args; ^this.multiChannelPerform('exprange', *args) }
-	curverange { arg ... args; ^this.multiChannelPerform('curverange', *args) }
-	unipolar { arg ... args; ^this.multiChannelPerform('unipolar', *args) }
-	bipolar { arg ... args; ^this.multiChannelPerform('bipolar', *args) }
-	lag { arg ... args; ^this.multiChannelPerform('lag', *args) }
-	lag2 { arg ... args; ^this.multiChannelPerform('lag2', *args) }
-	lag3 { arg ... args; ^this.multiChannelPerform('lag3', *args) }
-	lagud { arg ... args; ^this.multiChannelPerform('lagud', *args) }
-	lag2ud { arg ... args; ^this.multiChannelPerform('lag2ud', *args) }
-	lag3ud { arg ... args; ^this.multiChannelPerform('lag3ud', *args) }
-	varlag { arg ... args; ^this.multiChannelPerform('varlag', *args) }
-	slew { arg ... args; ^this.multiChannelPerform('slew', *args) }
-	blend { arg ... args; ^this.multiChannelPerform('blend', *args) }
-	checkBadValues { arg ... args; ^this.multiChannelPerform('checkBadValues', *args) }
-	prune { arg ... args; ^this.multiChannelPerform('prune', *args) }
 
 	minNyquist { ^min(this, SampleRate.ir * 0.5) }
 
@@ -1426,79 +1259,6 @@ SequenceableCollection : Collection {
 		}
 	}
 
-
-	// Finds the median efficiently, by rearranging the array IN-PLACE.
-	hoareMedian { |function|
-		if(this.isEmpty) { ^nil };
-		^if(this.size.even, {
-			[this.hoareFind(this.size/ 2 - 1, function),
-				this.hoareFind(this.size/ 2,     function)].mean;
-		}, {
-			this.hoareFind(this.size - 1 / 2, function);
-		});
-	}
-
-	// Finds the kth element in the array, according to a given sorting function.
-	// This is typically fast (order is O(n) rather than O(n log n)) because it
-	// doesn't attempt to completely sort the array. Method is due to C. A. F. Hoare.
-	// Note: this rearranges array elements IN PLACE.
-	hoareFind { |k, function, left, right|
-		var i,j,p,r,l;
-
-		if (function.isNil) { function = { | a, b | a < b } };
-
-		i = left  ?  0;
-		j = right ?? {this.size-1};
-
-		while{ i < j }{
-			p = this[k];
-			# l, r = this.hoarePartition(i,j,p, function);
-			if(r < k, {
-				// kth smallest is in right split
-				i = l;
-			});
-			if(k < l, {
-				// kth smallest is in left split
-				j = r;
-			});
-		};
-		// The desired element is in desired position
-		^this[k];
-	}
-
-	// In-place partitioning method used by hoareFind.
-	// Note: for efficiency this doesn't check that function is defined, so you
-	// must supply a function! See hoareFind for example
-	hoarePartition { |l0, r0, p, function|
-		var l, r, tmp;
-
-		l = l0;
-		r = r0;
-
-		while({ l <= r }, {
-			// left_scan
-			while { (l < this.size) and: { function.value(this[l], p) } }{
-				l = l + 1;
-			};
-			// right_scan
-			while { (r >= 0) and: { function.value(p, this[r]) } }{
-				r = r - 1;
-			};
-			// check and exchange
-			if(l <= r){
-				tmp = this[l];
-				this[l] = this[r];
-				this[r] = tmp;
-				// then
-				l = l + 1;
-				r = r - 1;
-			};
-		});
-
-		^[l,r];
-	}
-
-
 	// streaming
 	*streamContents { arg function;
 		var stream;
@@ -1548,12 +1308,6 @@ SequenceableCollection : Collection {
 				};
 			}
 		}
-	}
-
-
-	// TempoClock play quantization
-	nextTimeOnGrid { arg clock;
-		^clock.nextTimeOnGrid(*this);
 	}
 
 	// we break up the array so that missing elements are set to nil in the Quant
@@ -1631,9 +1385,5 @@ SequenceableCollection : Collection {
 	prUnixCmd { arg postOutput = true;
 		_ArrayPOpen
 		^this.primitiveFailed
-	}
-
-	sanitize { arg ... args;
-		^this.multiChannelPerform(\sanitize, *args);
 	}
 }

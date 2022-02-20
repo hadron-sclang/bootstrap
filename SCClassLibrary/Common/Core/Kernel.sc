@@ -248,51 +248,6 @@ Process {
 		}
 	}
 
-	openCodeFile {
-		var string, class, method, words;
-		string = this.getCurrentSelection;
-		if (string.includes($:), {
-			string.removeAllSuchThat(_.isSpace);
-			words = string.delimit({ arg c; c == $: });
-			class = words.at(0).asSymbol.asClass;
-			if (class.notNil, {
-				method = class.findMethod(words.at(1).asSymbol);
-				if (method.notNil, {
-					method.filenameSymbol.asString.openDocument(method.charPos, -1);
-				});
-			});
-		},{
-			class = string.asSymbol.asClass;
-			if (class.notNil, {
-				class = class.classRedirect;
-				class.filenameSymbol.asString.openDocument(class.charPos, -1);
-			});
-		});
-	}
-
-	openWinCodeFile {
-		var string, class, method, words;
-		string = this.getCurrentSelection;
-		if (string.includes($:), {
-			string.removeAllSuchThat(_.isSpace);
-			words = string.delimit({ arg c; c == $: });
-			class = words.at(0).asSymbol.asClass;
-			if (class.notNil, {
-				method = class.findMethod(words.at(1).asSymbol);
-				if (method.notNil, {
-					method.filenameSymbol.asString.openWinTextFile(method.charPos, -1);
-				});
-			});
-		},{
-			class = string.asSymbol.asClass;
-			if (class.notNil, {
-				class = class.classRedirect;
-				class.filenameSymbol.asString.openWinTextFile(class.charPos, -1);
-			});
-		});
-	}
-
-
 	methodReferences {
 		// this will not find method calls that are compiled with special byte codes such as 'value'.
 		var name, out, references, nameString;
@@ -308,66 +263,6 @@ Process {
 		},{
 			Post << "\nNo references to '" << name << "'.\n";
 		});
-	}
-	methodTemplates {
-		// this constructs the method templates when cmd-Y is pressed in the Lang menu.
-		var name, out, found = 0, namestring, text;
-		out = CollStream.new;
-
-		text = this.getCurrentSelection;
-
-		if (text.isEmpty){
-			Post << "\nNo implementations of ''.\n";
-			^this
-		};
-		if (text[0].toLower != text[0]) {
-			// user pressed the wrong key. DWIM.
-			^this.openCodeFile;
-		};
-		name = text.asSymbol;
-		out << "Implementations of '" << name << "' :\n";
-		Class.allClasses.do({ arg class;
-			class.methods.do({ arg method;
-				if (method.name == name, {
-					found = found + 1;
-					namestring = class.name ++ ":" ++ name;
-					out << "   [" << namestring << "] :     ";
-					if (method.argNames.isNil or: { method.argNames.size == 1 }, {
-						out << "this." << name;
-						if (name.isSetter, { out << "(val)"; });
-					},{
-						out << method.argNames.at(0);
-						if (name.asString.at(0).isAlpha, {
-							out << "." << name << "(";
-							method.argNames.do({ arg argName, i;
-								if (i > 0, {
-									if (i != 1, { out << ", " });
-									out << argName;
-								});
-							});
-							out << ")";
-						},{
-							out << " " << name << " ";
-							out << method.argNames.at(1);
-						});
-					});
-					out.nl;
-				});
-			});
-		});
-		case
-		{ found == 0 }
-		{
-			Post << "\nNo implementations of '" << name << "'.\n";
-		}
-		{ found == 1 }
-		{
-			interpreter.cmdLine = namestring;
-			this.openCodeFile;
-		}
-		{
-			out.collection.newTextWindow(name.asString);
-		};
 	}
 
 	interpretCmdLine {

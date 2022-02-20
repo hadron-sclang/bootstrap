@@ -249,18 +249,6 @@ SimpleNumber : Number {
 		};
 		^prHermite(this, x)
 	}
-	prHermite { |x| _Hermite; ^this.primitiveFailed }
-	chebyshevT { |x| _ChebyshevT; ^this.primitiveFailed }
-	chebyshevU { |x| _ChebyshevU; ^this.primitiveFailed }
-	chebyshevTPrime { |x| _ChebyshevTPrime; ^this.primitiveFailed }
-	//  "https://en.wikipedia.org/wiki/Chebyshev_polynomials#Roots_and_extrema"
-	//  "http://mathworld.wolfram.com/ChebyshevPolynomialoftheFirstKind.html"
-	chebyshevTZeros {
-		var n = this.asInteger;
-		^(1..n).collect { |k|
-			cos(pi * ((2 * k) - 1) / (2 * n))
-		}
-	}
 
 	//  Spherical Harmonics
 	sphericalHarmonic { |m, theta, phi| _SphericalHarmonic; ^this.primitiveFailed }
@@ -645,12 +633,6 @@ SimpleNumber : Number {
 		^scale.performNearestInScale(this, stepsPerOctave);
 	}
 
-	partition { |parts = 2, min = 1|
-		// randomly partition a number into parts of at least min size :
-		var n = this - (min - 1 * parts);
-		^(1..n-1).scramble.keep(parts-1).sort.add(n).differentiate + (min - 1)
-	}
-
 	nextTimeOnGrid { |clock|
 		^clock.nextTimeOnGrid(this, 0)
 	}
@@ -704,31 +686,5 @@ SimpleNumber : Number {
 
 	asBufWithValues {
 		^this
-	}
-
-	// this method could be refactored by dispatching, but we're trying to keep the overhead low.
-
-	schedBundleArrayOnClock { |clock, bundleArray, lag = 0, server, latency|
-		var sendBundle = { server.sendBundle(latency ? server.latency, *bundleArray) };
-		// "this" is the delta time for the clock (usually in beats)
-		// "lag" is a tempo independent absolute lag time (in seconds)
-		if (lag != 0) {
-			if(this != 0) {
-				// schedule on both clocks
-				clock.sched(this, { SystemClock.sched(lag, sendBundle) })
-			} {
-				// only lag specified: schedule only on the system clock
-				SystemClock.sched(lag, sendBundle)
-			}
-		} {
-			if(this != 0) {
-				// only delta specified: schedule only on the clock passed in
-				clock.sched(this, sendBundle)
-			} {
-				// no delays: send directly
-				sendBundle.value
-			}
-		}
-
 	}
 }

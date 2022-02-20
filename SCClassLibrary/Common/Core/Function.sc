@@ -24,9 +24,6 @@ Function : AbstractFunction {
 
 	choose { ^this.value }
 
-	update { |obj, what ... args| this.value(obj, what, *args) }
-
-
 	// evaluation
 	value { arg ... args;
 		_FunctionValue
@@ -231,30 +228,6 @@ Function : AbstractFunction {
 
 	performDegreeToKey { arg scaleDegree, stepsPerOctave = 12, accidental = 0;
 		^this.value(scaleDegree, stepsPerOctave, accidental)
-	}
-
-	// multichannel expand function return values
-
-	flop {
-		if(def.argNames.isNil) { ^this };
-		^{ |... args| args.flop.collect(this.valueArray(_)) }
-	}
-
-
-	envirFlop {
-		var func = this.makeFlopFunc;
-		^{ |... args|
-			func.valueArrayEnvir(args).collect(this.valueArray(_))
-		}
-	}
-
-	makeFlopFunc {
-		if(def.argNames.isNil) { ^this };
-
-		^interpret(
-			"#{ arg " ++ " " ++ def.argumentString(true) ++ "; "
-			++ "[ " ++ def.argumentString(false) ++ " ].flop };"
-		)
 	}
 
 	// attach the function to a specific environment

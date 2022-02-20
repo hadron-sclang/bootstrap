@@ -251,14 +251,6 @@ Dictionary : Set {
 		// the value is at the odd index.
 		^array.at(index + 1);
 	}
-	order { arg func;
-		var assoc;
-		if( this.isEmpty, { ^nil });
-		this.keysValuesDo { arg key, val;
-			assoc = assoc.add(key -> val);
-		};
-		^assoc.sort(func).collect(_.key)
-	}
 	powerset {
 		var keys = this.keys.asArray.powerset;
 		^keys.collect { | list |

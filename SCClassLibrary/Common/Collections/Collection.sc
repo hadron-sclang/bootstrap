@@ -47,21 +47,6 @@ Collection {
 		};
 		^obj
 	}
-	*fillND { | dimensions, function, args = #[] | // args are private
-		var n = dimensions.first;
-		var obj = this.new(n);
-		var argIndex = args.size;
-		args = args ++ 0;
-		if(dimensions.size <= 1) {
-			n.do { |i| obj.add(function.valueArray(args.put(argIndex, i))) }
-		} {
-			dimensions = dimensions.drop(1);
-			n.do { |i|
-				obj = obj.add(this.fillND(dimensions, function, args.put(argIndex, i)))
-			}
-		};
-		^obj
-	}
 
 	++ { | collection|
 		^this.copy.addAll(collection)
@@ -98,9 +83,6 @@ Collection {
 		this.do { tally = tally + 1 };
 		^tally
 	}
-	flatSize {
-		^this.sum(_.flatSize)
-	}
 
 	isEmpty { ^this.size == 0 }
 	notEmpty { ^this.size > 0 }
@@ -112,7 +94,6 @@ Collection {
 	addAll { | aCollection | aCollection.asCollection.do { | item | this.add(item) } }
 	remove { ^this.subclassResponsibility(thisMethod) }
 	removeAll { | list | list.do { | item | this.remove(item) } }
-	removeEvery { | list | this.removeAllSuchThat(list.includes(_)) }
 	removeAllSuchThat { | function |
 		var removedItems = this.class.new;
 		var copy = this.copy;
@@ -619,18 +600,6 @@ Collection {
 		^if(species == Array) { result } {
 			result.collectAs({ | item | item.as(species) }, species)
 		}
-	}
-
-	flopDict { | unbubble=true |
-		var res, first = true;
-		this.do { | dict |
-			if(first) { res = dict.class.new; first = false };
-			dict.keysValuesDo { | key, val |
-				res[key] = res[key].add(val)
-			}
-		};
-		if(unbubble) { res = res.collect(_.unbubble) };
-		^res
 	}
 
 	histo { arg steps = 100, min, max;
