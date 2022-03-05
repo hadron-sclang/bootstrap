@@ -197,7 +197,6 @@ Object  {
 	next { ^this }
 	reset { ^this }
 	first { arg inval; this.reset; ^this.next(inval) }
-	iter { ^OneShotStream(this) }
 	stop { ^this }
 	free { ^this }
 	clear { ^this }
@@ -223,8 +222,6 @@ Object  {
 		}
 	}
 
-	repeat { arg repeats = inf; ^Pn(this, repeats).asStream }
-	loop { ^this.repeat(inf) }
 	nextN { arg n, inval;
 		^Array.fill(n, { this.next(inval) });
 	}
@@ -279,11 +276,6 @@ Object  {
 	frozen { _ObjectIsPermanent; ^this.primitiveFailed }
 
 	// errors
-	halt {
-		thisProcess.nowExecutingPath = nil;
-		OnError.run;
-		this.prHalt
-	}
 	prHalt {
 		_Halt
 		^this.primitiveFailed
@@ -327,19 +319,9 @@ Object  {
 		_GetBackTrace
 		^this.primitiveFailed
 	}
-	throw {
-		if (Error.handling) {
-			error("throw during error handling!\n");
-			this.dump;
-			^this
-		};
-		thisThread.handleError(this);
-	}
-
 
 	// conversion
 	species { ^this.class }
-	asCollection { ^[this] }
 	asSymbol { ^this.asString.asSymbol }
 	asString { arg limit = 512;
 		var string;
@@ -393,10 +375,6 @@ Object  {
 	slice { ^this }
 	shape { ^nil }
 	unbubble { ^this }
-	bubble { arg depth=0, levels=1;
-		if (levels <= 1) { ^[this] };
-		^[this.bubble(depth,levels-1)]
-	}
 
 	// compatibility with sequenceable collection
 
@@ -407,13 +385,6 @@ Object  {
 			this.asArray.instill(index, item, default)
 		}
 	}
-
-	// FunctionList support
-	addFunc { arg ... functions;
-		^FunctionList([this] ++ functions)
-	}
-	removeFunc { arg function; if(this === function) { ^nil } }
-	replaceFunc { arg find, replace; if(this === find) { ^replace } }
 
 	// looping
 	while { arg body;
@@ -443,10 +414,6 @@ Object  {
 	yieldAndReset { arg reset = true;
 		_RoutineYieldAndReset
 		^this.primitiveFailed
-	}
-	idle { arg val;
-		var time = thisThread.beats;
-		while { thisThread.beats - time < val } { this.value.yield }
 	}
 
 	// dependancy support
@@ -483,14 +450,6 @@ Object  {
 			});
 		});
 	}
-
-	inspect { ^this.inspectorClass.new(this) }
-	inspectorClass { ^ObjectInspector }
-	inspector {
-		// finds the inspector for this object, if any.
-		^Inspector.inspectorFor(this)
-	}
-
 
 	// virtual machine debugging...
 	crash {
@@ -550,19 +509,6 @@ Object  {
 	isUGen { ^false }
 	numChannels { ^1 }
 
-	pair { arg that; ^[this, that] }
-	pairs { arg that;
-		var list;
-		list = [];
-		this.asArray.do {|a|
-			that.asArray.do {|b|
-				list = list.add(a.asArray ++ b)
-			};
-		};
-		^list;
-	}
-
-
 	// scheduling
 	awake { arg beats, seconds, clock;
 		var time;
@@ -572,63 +518,12 @@ Object  {
 	beats_ {  } // for PauseStream
 	clock_ {  } // for Clock
 
-	// catch binary operators failure
-	performBinaryOpOnSomething { arg aSelector, thing, adverb;
-		if (aSelector === '==', {
-			^false
-		},{
-		if (aSelector === '!=', {
-			^true
-		},{
-			BinaryOpFailureError(this, aSelector, [thing, adverb]).throw;
-		})});
-	}
-	performBinaryOpOnSimpleNumber { arg aSelector, thing, adverb;
-		^this.performBinaryOpOnSomething(aSelector, thing, adverb)
-	}
-	performBinaryOpOnSignal { arg aSelector, thing, adverb;
-		^this.performBinaryOpOnSomething(aSelector, thing, adverb)
-	}
-	performBinaryOpOnComplex { arg aSelector, thing, adverb;
-		^this.performBinaryOpOnSomething(aSelector, thing, adverb)
-	}
-	performBinaryOpOnSeqColl { arg aSelector, thing, adverb;
-		^this.performBinaryOpOnSomething(aSelector, thing, adverb)
-	}
-	performBinaryOpOnUGen { arg aSelector, thing, adverb;
-		^this.performBinaryOpOnSomething(aSelector, thing, adverb)
-	}
-
-	writeDefFile { arg name, dir, overwrite = (true);
-
-		StartUp.defer { // make sure the synth defs are written to the right path
-			var file;
-			dir = dir ? SynthDef.synthDefDir;
-			if (name.isNil or: { name.asString.isEmpty }) { Error("missing SynthDef file name").throw } {
-				name = dir +/+ name ++ ".scsyndef";
-				if(overwrite or: { pathMatch(name).isEmpty })
-					{
-					file = File(name, "w");
-					protect {
-						AbstractMDPlugin.clearMetadata(name);
-						this.asArray.writeDef(file);
-					}{
-						file.close;
-					}
-				}
-			}
-		}
-
-	}
-
 	isInputUGen { ^false }
 	isOutputUGen { ^false }
 	isControlUGen { ^false }
 	source { ^this }
 	asUGenInput { ^this }
 	asControlInput { ^this }
-	asAudioRateInput { ^if(this.rate != \audio) { K2A.ar(this) } { this } }
-
 
 	// these are the same as new and newCopyArgs, but should not be overridden by any class.
 	*prNew { arg maxSize = 0;

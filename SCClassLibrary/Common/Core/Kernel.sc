@@ -81,12 +81,6 @@ Class {
 		}
 	}
 
-	dumpByteCodes { arg methodName;
-		var meth;
-		meth = this.findMethod(methodName);
-		if (meth.notNil, { meth.dumpByteCodes },{ Post << methodName << " not found.\n"; });
-	}
-
 	dumpClassSubtree {
 		 _DumpClassSubtree
 		^this.primitiveFailed
@@ -149,13 +143,6 @@ Class {
 	openCodeFile {
 		this.filenameSymbol.asString.openDocument(this.charPos, -1);
 	}
-	classVars {
-		var start, end;
-		start = this.classVarIndex;
-		end = start + this.classVarNames.size;
-		^thisProcess.instVarAt(0).copyRange(start, end)
-	}
-	inspectorClass { ^ClassInspector }
 	findReferences { arg aSymbol, references;
 		methods.do({ arg meth;
 			references = meth.findReferences(aSymbol, references)
@@ -246,23 +233,6 @@ Process {
 		} {
 			interpreter.cmdLine;
 		}
-	}
-
-	methodReferences {
-		// this will not find method calls that are compiled with special byte codes such as 'value'.
-		var name, out, references, nameString;
-		out = CollStream.new;
-		name = this.getCurrentSelection.asSymbol;
-		references = Class.findAllReferences(name);
-		if (references.notNil, {
-			out << "References to '" << name << "' :\n";
-			references.do({ arg ref;
-				nameString = ref.ownerClass.name ++ ":" ++ ref.name;
-				out << "   [" << nameString << "]\n"; });
-			out.collection.newTextWindow(name.asString);
-		},{
-			Post << "\nNo references to '" << name << "'.\n";
-		});
 	}
 
 	interpretCmdLine {
