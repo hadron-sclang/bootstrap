@@ -58,7 +58,6 @@ Nil {
 	play {}
 
 	nextTimeOnGrid { arg clock; ^clock !? { clock.nextTimeOnGrid } }
-	asQuant { ^Quant.default }  //  { ^Quant.new }
 
 	swapThisGroup {}
 
@@ -73,15 +72,8 @@ Nil {
 
 	matchItem { ^true } // nil matches anything
 
-	// Array support
-	add { arg value;
-		// This makes it unecessary to check for array.isNil when doing:
-		// array = array.add(thing);     Instead, it just works.
-		^[value]
-	}
 	addAll { arg array; ^array.asArray }
 	++ { arg array; ^array }
-	asCollection { ^[] }
 	remove {}
 
 	// ControlView support
@@ -89,9 +81,6 @@ Nil {
 	get { arg prevVal; ^prevVal }
 
 	// FunctionList support
-	addFunc { arg ... functions;
-		^if(functions.size <= 1) {functions[0] } { FunctionList(functions) }
-	}
 	removeFunc { ^this }
 
 	replaceFunc { }
@@ -116,10 +105,6 @@ Nil {
 	}
 
 	archiveAsCompileString { ^true }
-
-	asSpec {
-		^ControlSpec.new;
-	}
 
 	superclassesDo {}
 }

@@ -1259,21 +1259,6 @@ SequenceableCollection : Collection {
 		}
 	}
 
-	// streaming
-	*streamContents { arg function;
-		var stream;
-		stream = CollStream.on(this.new(100));
-		function.value(stream);
-		^stream.contents
-	}
-	*streamContentsLimit { arg function, limit=2000;
-		var stream;
-		stream = LimitedWriteStream.on(this.new(100 min: limit));
-		stream.limit_(limit).limitFunc_({ ^stream.contents });
-		function.value(stream);
-		^stream.contents
-	}
-
 	wrapAt { arg index;
 		index = index % this.size;
 		^this.at(index)
