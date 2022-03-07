@@ -128,14 +128,6 @@ Function : AbstractFunction {
 		^sum
 	}
 
-	defer { arg delta;
-		if (delta.isNil and: {this.canCallOS}) {
-			this.value
-		}{
-			AppClock.sched(delta ? 0, { this.value; nil })
-		}
-	}
-
 	thunk { ^Thunk(this) }
 
 	// Pattern support
@@ -163,16 +155,6 @@ Function : AbstractFunction {
 	}
 
 	cmdPeriod { this.value }
-
-
-	bench { arg print = true;
-		var dt;
-		var t0 = Main.elapsedTime;
-		this.value;
-		dt = Main.elapsedTime - t0;
-		if (print) { Post << "time to run: " << dt << " seconds.\n"; }
-		^dt
-	}
 
 	protect { arg handler;
 		var result;
@@ -208,17 +190,7 @@ Function : AbstractFunction {
 
 	handleError { arg error; ^this.value(error) }
 
-	case { arg ... cases;
-		cases = [this] ++ cases;
-		cases.pairsDo { | test, trueFunc |
-			if (test.value) { ^trueFunc.value };
-		};
-		if (cases.size.odd) { ^cases.last.value };
-		^nil
-	}
-
 	r { ^Routine(this) }
-	p { ^Prout(this) }
 
 	matchItem { arg item;
 		^this.value(item)
@@ -234,56 +206,6 @@ Function : AbstractFunction {
 	inEnvir { |envir|
 		envir ?? { envir = currentEnvironment };
 		^{ |... args| envir.use({ this.valueArray(args) }) }
-	}
-
-	asBuffer { |duration = 0.01, target, action, fadeTime = (0)|
-		var buffer, def, synth, name, numChannels, rate, server;
-		target = target.asTarget;
-		server = target.server;
-
-
-		name = this.hash.asString;
-		def = SynthDef(name, { |bufnum|
-			var	val = SynthDef.wrap(this);
-			if(val.isValidUGenInput.not) {
-				val.dump;
-				Error("reading signal failed: % is no valid UGen input".format(val)).throw
-			};
-			val = UGen.replaceZeroesWithSilence(val.asArray);
-			rate = val.rate;
-			if(rate == \audio) { // convert mixed rate outputs:
-				val = val.collect { |x| if(x.rate != \audio) { K2A.ar(x) } { x } }
-			};
-			numChannels = val.size.max(1);
-			if(fadeTime > 0) {
-				val = val * EnvGen.kr(Env.linen(fadeTime, duration - (2 * fadeTime), fadeTime))
-			};
-			RecordBuf.perform(RecordBuf.methodSelectorForRate(rate), val, bufnum, loop: 0);
-			Line.perform(Line.methodSelectorForRate(rate), dur: duration, doneAction: 2);
-		});
-
-		buffer = Buffer.new(server);
-
-		Routine.run {
-			var numFrames, running;
-			running = server.serverRunning;
-			if(running.not) { server.bootSync; 1.wait };
-			numFrames = duration * server.sampleRate;
-			if(rate == \control) { numFrames = numFrames / server.options.blockSize };
-			buffer.numFrames = numFrames.asInteger;
-			buffer.numChannels = numChannels;
-			buffer = buffer.alloc(numFrames, numChannels);
-			server.sync;
-			def.send(server);
-			server.sync;
-			synth = Synth(name, [\bufnum, buffer], target, \addAfter);
-			OSCFunc({
-				action.value(buffer);
-				server.sendMsg("/d_free", name);
-			}, '/n_end', server.addr, nil, [synth.nodeID]).oneShot;
-		};
-
-		^buffer
 	}
 
 	loadToFloatArray { |duration = 0.01, target, action|
@@ -324,13 +246,3 @@ Thunk : AbstractFunction {
 	valueArrayEnvir { ^this.value }
 }
 
-UGenThunk : Thunk {
-	var ugens;
-	value {
-		var res;
-		ugens = ugens ?? { IdentityDictionary.new };
-		res = ugens.at(UGen.buildSynthDef);
-		if(res.isNil) { res = super.value; ugens.put(UGen.buildSynthDef, res) };
-		^res
-	}
-}

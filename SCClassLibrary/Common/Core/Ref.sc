@@ -49,12 +49,6 @@ Ref : AbstractFunction {
 
 	asControlInput { ^value.asControlInput }
 
-	// Some UGens take Buffer data which
-	// the user might want to specify simply as `[0.9, 0.1, 0.3]
-	asBufWithValues {
-		^LocalBuf.newFrom(value);
-	}
-
 	// Allow to multichannel expand ugen specs, like those of Klank,
 	// in the case of which two is the rank, but could be otherwise.
 	multichannelExpandRef { |rank|

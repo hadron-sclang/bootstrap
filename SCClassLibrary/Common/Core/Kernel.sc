@@ -179,23 +179,6 @@ Process {
 	var <>nowExecutingPath;
 
 	startup {
-		var time;
-
-		Class.initClassTree(AppClock); // AppClock first in case of error
-		time = this.class.elapsedTime;
-		Class.initClassTree(Object);
-		("Class tree inited in" + (this.class.elapsedTime - time).round(0.01) + "seconds").postln;
-		Class.classesInited = nil;
-
-		topEnvironment = Environment.new;
-		currentEnvironment = topEnvironment;
-		Archive.read;
-
-		// This method is called automatically right after compiling.
-		// Override in class 'Main' to do initialization stuff,
-		// but make sure to call this superclass method.
-
-		// the AppClock is not started until after this method is complete
 	}
 	run {
 		// This method is called when 'Run Main' is chosen from the menu.
@@ -206,15 +189,6 @@ Process {
 		// Override in class 'Main' to do whatever you want.
 	}
 	shutdown {
-		// This method is called before recompiling or quitting.
-		// Override in class 'Main' to do whatever you want.
-		ShutDown.run;
-		NetAddr.disconnectAll;
-		File.closeAll;
-		Archive.write;
-	}
-	tick { // called repeatedly by SCVirtualMachine::doPeriodicTask
-		^AppClock.tick;
 	}
 
 	*tailCallOptimize {
@@ -253,8 +227,6 @@ Process {
 	showHelp {
 		this.getCurrentSelection.help
 	}
-
-	argv { ^[] }
 
 	shallowCopy { ^this }
 
@@ -317,7 +289,6 @@ FunctionDef {
 		_FunctionDefDumpContexts
 		^this.primitiveFailed
 	}
-	inspectorClass { ^FunctionDefInspector }
 
 	findReferences { arg aSymbol, references;
 		var lits;
@@ -359,18 +330,6 @@ FunctionDef {
 		}
 		^res
 	}
-
-	keyValuePairsFromArgs {
-		var values;
-		if(argNames.isNil) { ^[] };
-		values = this.prototypeFrame.keep(argNames.size);
-		^[argNames, values].flop.flatten
-	}
-
-	makeEnvirFromArgs {
-		^().putPairs(this.keyValuePairsFromArgs)
-	}
-
 }
 
 Method : FunctionDef {
@@ -385,10 +344,6 @@ Method : FunctionDef {
 		//can't add instance variables to Class
 		^this.name.asString.findHelpFile.notNil
 	}
-	help {
-		HelpBrowser.openHelpForMethod(this);
-	}
-	inspectorClass { ^MethodInspector }
 	storeOn { arg stream;
 		stream << ownerClass.name << ".findMethod(" << name.asCompileString << ")"
 	}
@@ -409,15 +364,6 @@ Method : FunctionDef {
 		functionRefs.notNil.if({references = references.add(this)});
 		^references
 	}
-
-	keyValuePairsFromArgs {
-		var names, values;
-		if(argNames.isNil, { ^[] });
-		names = argNames.drop(1); // first argName is "this"
-		values = this.prototypeFrame.drop(1).keep(names.size);
-		^[names, values].flop.flatten
-	}
-
 }
 
 Frame {
@@ -425,7 +371,6 @@ Frame {
 	// since some Frames are deleted instead of garbage collected, it is too
 	// dangerous to allow access to them. Dangling pointers could result.
 	shallowCopy { ^this }
-	inspectorClass { ^FrameInspector }
 
 	storeOn { arg stream; stream << "nil"; }
 	archiveAsCompileString { ^true }
@@ -471,23 +416,6 @@ Interpreter {
 		^this.compile(cmdLine).value;
 	}
 
-	interpretPrintCmdLine {
-		var res, func, code = cmdLine, doc, ideClass = \ScIDE.asClass;
-		preProcessor !? { cmdLine = preProcessor.value(cmdLine, this) };
-		func = this.compile(cmdLine);
-		if (ideClass.notNil) {
-			thisProcess.nowExecutingPath = ideClass.currentPath
-		} {
-			if(\Document.asClass.notNil and: {(doc = Document.current).tryPerform(\dataptr).notNil}) {
-				thisProcess.nowExecutingPath = doc.tryPerform(\path);
-			}
-		};
-		res = func.value;
-		thisProcess.nowExecutingPath = nil;
-		codeDump.value(code, res, func, this);
-		("-> " ++ res).postln;
-	}
-
 	interpret { arg string ... args;
 		// compile, evaluate
 		cmdLine = string;
@@ -510,39 +438,6 @@ Interpreter {
 	clearAll {
 		a = b = c = d = e = f = g = h = i = j = k = l = m =
 		n = o = p = q = r = s = t = u = v = w = x = y = z = nil;
-	}
-
-	executeFile { arg pathName ... args;
-		var	result, saveExecutingPath = thisProcess.nowExecutingPath;
-		if (File.exists(pathName).not) {
-			"file \"%\" does not exist.\n".postf(pathName);
-			^nil
-		};
-		thisProcess.nowExecutingPath = pathName;
-		protect {
-			result = this.compileFile(pathName).valueArray(args)
-		} { |exception|
-				exception !? { exception.path = pathName };
-				thisProcess.nowExecutingPath = saveExecutingPath
-		};
-		^result
-	}
-
-	compileFile { arg pathName;
-		var file, text;
-		file = File.new(pathName, "r");
-		if (file.isOpen.not, {
-			error("file open failed\n");
-			^nil
-		});
-		text = file.readAllString;
-		file.close;
-		preProcessor !? { text = preProcessor.value(text, this) };
-		if (text.beginsWith("#!"), {
-			// comment out shebang to preserve line count
-			text.overWrite("//");
-		});
-		^this.compile(text)
 	}
 
 	// PRIVATE

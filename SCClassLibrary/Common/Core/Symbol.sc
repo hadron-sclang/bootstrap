@@ -28,10 +28,6 @@ Symbol {
 		_SymbolAsGetter
 		^this.primitiveFailed
 	}
-	asSpec { ^Spec.specs.at(this) }
-	asWarp { arg spec; ^Warp.warps.at(this).new(spec) }
-	asTuning { ^Tuning.at(this) }
-	asScale { ^Scale.at(this) }
 	// testing
 	isSetter {
 		// returns true if last character of symbol is an underscore
@@ -230,22 +226,6 @@ Symbol {
 	}
 
 	archiveAsCompileString { ^true }
-
-	kr { | val, lag, fixedLag = false, spec |
-		^NamedControl.kr(this, val, lag, fixedLag, spec)
-	}
-
-	ir { | val, spec |
-		^NamedControl.ir(this, val, spec:spec)
-	}
-
-	tr { | val, spec |
-		^NamedControl.tr(this, val, spec:spec)
-	}
-
-	ar { | val, lag, spec |
-		^NamedControl.ar(this, val, lag, spec)
-	}
 
 	matchOSCAddressPattern { arg addressPattern;
 		_Symbol_matchOSCPattern

@@ -92,11 +92,6 @@ Thread : Stream {
 
 Routine : Thread {
 
-	*run { arg func, stackSize, clock, quant;
-		var routine = super.new(func, stackSize);
-		^routine.play(clock ? SystemClock, quant);
-	}
-
 	// resume, next, value, run are synonyms
 	next { arg inval;
 		_RoutineResume
@@ -134,9 +129,6 @@ Routine : Thread {
 		^this.primitiveFailed
 	}
 
-	p { ^Prout(func) }
-
-	storeArgs { ^[func] }
 	storeOn { arg stream;
 		stream << this.class.name;
 		this.storeParamsOn(stream);
