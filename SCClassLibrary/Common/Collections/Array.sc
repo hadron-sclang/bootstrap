@@ -143,52 +143,13 @@ Array[slot] : ArrayedCollection {
 		});
 	}
 
-	// UGen support:
-	source {
-		// returns the source UGen from an Array of OutputProxy(s)
-		var elem = this.at(0);
-		if (elem.isKindOf(OutputProxy), {
-			^elem.source
-		},{
-			Error("source: Not an Array of OutputProxy(s)\n").throw;
-		});
-	}
-
 	isValidUGenInput { ^true }
 	numChannels { ^this.size }
-
-	// multichannel UGen-poll
-	poll { arg trig = 10, label, trigid = -1;
-		if(label.isNil){ label = this.size.collect{|index| "UGen Array [%]".format(index) } };
-		^Poll(trig, this, label, trigid)
-	}
-	dpoll { arg label, run = 1, trigid = -1;
-		if(label.isNil){ label = this.size.collect{|index| "UGen Array [%]".format(index) } };
-		^Dpoll(this, label, run, trigid)
-	}
 
 	envAt { arg time;
 		_ArrayEnvAt
 		^this.primitiveFailed
 	}
-
-//	// 2D array support
-//	*newClear2D { arg rows=1, cols=1;
-//		^super.fill(rows, { Array.newClear(cols) });
-//	}
-//	*new2D { arg rows=1, cols=1;
-//		^this.newClear2D(rows, cols);
-//	}
-//	at2D { arg row, col; ^this.at(row).at(col) }
-//	put2D { arg row, col, val; ^this.at(row).put(col, val) }
-//	fill2D { arg val;
-//		this.do({ arg row;
-//			row.size.do({ arg i;
-//				row.put(i, val)
-//			})
-//		})
-//	}
-
 
 	// IdentitySet support
 	atIdentityHash { arg argKey;
@@ -199,27 +160,6 @@ Array[slot] : ArrayedCollection {
 	atIdentityHashInPairs { arg argKey;
 		_Array_AtIdentityHashInPairs
 		^this.primitiveFailed
-	}
-
-	asSpec { ^ControlSpec( *this ) }
-
-	// threads
-	fork { arg join (this.size), clock, quant=0.0, stackSize=64;
-		var count = 0;
-		var cond = Condition({ count >= join });
-		this.do({ arg func;
-			Routine({ arg time;
-				func.value(time);
-				count = count + 1;
-				cond.signal;
-			}).play(clock, quant);
-		});
-		cond.wait;
-	}
-
-	// UGen support
-	madd { arg mul = 1.0, add = 0.0;
-		^MulAdd(this, mul, add);
 	}
 
 	// OSC

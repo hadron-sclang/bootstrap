@@ -91,19 +91,6 @@ ArrayedCollection : SequenceableCollection {
 		}
 	}
 
-	replace { arg find, replace;
-		var index, out = [], array = this;
-		find = find.asArray;
-		replace = replace.asArray;
-		while {
-			(index = array.find(find)).notNil
-		}{
-			out = out ++ array.keep(index) ++ replace;
-			array = array.drop(index + find.size);
-		};
-		^out ++ array
-	}
-
 	// see counterparts to these in Object
 	slotSize {
 		^this.size;
@@ -322,10 +309,6 @@ ArrayedCollection : SequenceableCollection {
 		// this assumes every element has the same rank
 		^1 + this.first.rank
 	}
-	shape {
-		// this assumes every element has the same shape
-		^[this.size] ++ this[0].shape
-	}
 	reshapeLike { arg another, indexing=\wrapAt;
 		var index = 0;
 		var flat = this.flat;
@@ -369,15 +352,6 @@ ArrayedCollection : SequenceableCollection {
 		};
 		^this.collect {|item| item.unbubble(depth-1) }
 	}
-	bubble { arg depth=0, levels=1;
-		if (depth <= 0) {
-			if (levels <= 1) { ^[this] }
-			^[this.bubble(depth,levels-1)]
-		};
-		^this.collect {|item| item.bubble(depth-1, levels) }
-	}
-
-
 
 	// random distribution table
 
@@ -400,20 +374,6 @@ ArrayedCollection : SequenceableCollection {
 	msgSize {
 		_NetAddr_MsgSize;
 		^this.primitiveFailed
-	}
-	bundleSize {
-		// array of messages
-		^([nil] ++ this).prBundleSize;
-	}
-	clumpBundles {
-		var size=0, res, clumps, count=0, bundleSizes;
-		bundleSizes = this.collect {|item| [item].bundleSize };
-		bundleSizes.do { |a, i|
-			size = size + a;
-			if(size >= 8192) { clumps = clumps.add(count); count = 0; size = a };
-			count = count + 1;
-		};
-		^this.clumps(clumps);
 	}
 
 	prBundleSize {

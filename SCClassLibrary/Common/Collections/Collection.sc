@@ -535,10 +535,7 @@ Collection {
 	isSubsetOf { | that | ^that.includesAll(this) }
 
 	asArray { ^Array.new(this.size).addAll(this) }
-	asBag { ^Bag.new(this.size).addAll(this) }
-	asList { ^List.new(this.size).addAll(this) }
 	asSet { ^Set.new(this.size).addAll(this) }
-	asSortedList { | function | ^SortedList.new(this.size, function).addAll(this) }
 
 	asAssociations { |class|
 		var res;
@@ -590,9 +587,6 @@ Collection {
 		};
 		^res
 	}
-
-	asEvent { |mergeFunc| ^this.asDict(mergeFunc, Event) }
-
 
 	powerset {
 		var species = this.species;
