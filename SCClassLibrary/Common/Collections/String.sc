@@ -25,18 +25,6 @@ String[char] : RawArray {
 		^pid;
 	}
 
-	// Like unixCmd but gets the result into a string
-	unixCmdGetStdOut { arg maxLineLength=1024;
-		var pipe, lines, line;
-
-		pipe = Pipe.new(this, "r");
-		lines = "";
-		line = pipe.getLine(maxLineLength);
-		while({line.notNil}, {lines = lines ++ line ++ "\n"; line = pipe.getLine; });
-		pipe.close;
-		^lines;
-	}
-
 	asSymbol {
 		_StringAsSymbol
 		^this.primitiveFailed
@@ -166,21 +154,6 @@ String[char] : RawArray {
 		});
 		^string
 	}
-	split { arg separator=$/;
-		var word="";
-		var array=[];
-		separator=separator.ascii;
-
-		this.do({arg let,i;
-			if(let.ascii != separator ,{
-				word=word++let;
-			},{
-				array=array.add(word);
-				word="";
-			});
-		});
-		^array.add(word);
-	}
 
 	contains { arg string, offset = 0;
 		^this.find(string, false, offset).notNil
@@ -304,8 +277,6 @@ String[char] : RawArray {
 		stream.putAll(this.asCompileString);
 	}
 
-	inspectorClass { ^StringInspector }
-
 	// -------- path operations --------------------------------------------------
 
 	standardizePath {
@@ -331,15 +302,6 @@ String[char] : RawArray {
 		} {
 			this.drop(-1)
 		}
-	}
-
-	absolutePath {
-		var first, sep;
-		sep = thisProcess.platform.pathSeparator;
-		first = this[0];
-		if(first == sep){^this};
-		if(first == $~){^this.standardizePath};
-		^File.getcwd ++ sep ++ this;
 	}
 
 	pathMatch { _StringPathMatch ^this.primitiveFailed } // glob
@@ -373,19 +335,6 @@ String[char] : RawArray {
 		if(path.isNil) { Error("can't resolve relative to an unsaved file").throw};
 		^(path.dirname ++ thisProcess.platform.pathSeparator ++ this)
 	}
-	include {
-		if(Quarks.isInstalled(this).not) {
-			Quarks.install(this);
-			"... the class library may have to be recompiled.".postln;
-			// maybe check later whether there are .sc files included.
-		}
-	}
-	exclude {
-		if(Quarks.isInstalled(this)) {
-			Quarks.uninstall(this);
-			"... the class library may have to be recompiled.".postln;
-		}
-	}
 	basename {
 		_String_Basename;
 		^this.primitiveFailed
@@ -393,52 +342,6 @@ String[char] : RawArray {
 	dirname {
 		_String_Dirname;
 		^this.primitiveFailed
-	}
-	splitext {
-		this.reverseDo({ arg char, i;
-			// Return early after the first path separator
-			if (Platform.isPathSeparator(char), {^[this, nil]});
-
-			if (char == $\., {
-				^[this.copyFromStart(this.size - 2 - i), this.copyToEnd(this.size - i)]
-			});
-		});
-
-		^[this, nil]
-	}
-
-	// path concatenate
-	+/+ { arg path;
-		var sep = thisProcess.platform.pathSeparator;
-		var hasLeftSep, hasRightSep;
-
-		if (path.respondsTo(\fullPath)) {
-			^PathName(this +/+ path.fullPath)
-		};
-
-		// convert to string before concatenation.
-		path = path.asString;
-		hasLeftSep = this.notEmpty and: { this.last.isPathSeparator };
-		hasRightSep = path.notEmpty and: { path.first.isPathSeparator };
-		if(hasLeftSep && hasRightSep) {
-			// prefer using the LHS separator
-			^this ++ path.drop(1)
-		};
-
-		if(hasLeftSep || hasRightSep) {
-			^this ++ path
-		};
-
-		^this ++ sep ++ path
-	}
-
-	asRelativePath { |relativeTo|
-		^PathName(this).asRelativePath(relativeTo)
-	}
-	asAbsolutePath {
-			// changed because there is no need to create a separate object
-			// when String already knows how to make an absolute path
-		^this.absolutePath;  // was ^PathName(this).asAbsolutePath
 	}
 
 	// runs a unix command and returns the result code.
@@ -468,52 +371,5 @@ String[char] : RawArray {
 	ugenCodeString { arg ugenIndex, isDecl, inputNames=#[], inputStrings=#[];
 		_UGenCodeString
 		^this.primitiveFailed
-	}
-
-	asSecs { |maxDays = 365| // assume a timeString of ddd:hh:mm:ss.sss. see asTimeString.
-		var time = 0, sign = 1, str = this;
-		var limits = [60, 60, 24, maxDays];
-		var scaling = [1.0, 60.0, 3600.0, 86400.0];
-		var slotNames = [\seconds, \minutes, \hours, \days];
-
-		if (this.first == $-) {
-			str = this.drop(1);
-			sign = -1
-		};
-
-		str.split($:).reverseDo { |num, i|
-			num = num.asFloat;
-			if (num < 0) {
-				format("%.asSecs: negative numbers within slots not supported, using absolute value", this).warn;
-				num = num.abs;
-			};
-			if (num > limits[i]) {
-				format("%.asSecs: number of % greater than %", this, slotNames[i], limits[i]).warn;
-			};
-			time = time + (num * scaling[i]);
-		};
-		^time * sign;
-	}
-
-	mkdir {
-		File.mkdir(this);
-	}
-
-	parseYAML {
-		_String_ParseYAML
-		^this.primitiveFailed
-	}
-
-	parseYAMLFile {
-		_String_ParseYAMLFile
-		^this.primitiveFailed
-	}
-
-	parseJSON {
-		^this.parseYAML
-	}
-
-	parseJSONFile {
-		^this.parseYAMLFile
 	}
 }

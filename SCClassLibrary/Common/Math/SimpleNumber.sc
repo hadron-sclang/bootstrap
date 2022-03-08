@@ -6,7 +6,6 @@ SimpleNumber : Number {
 	numChannels { ^1 }
 
 	magnitude { ^this.abs }
-	angle { ^if(this >= 0) { 0.0 } { pi } }
 
 
 	neg { _Neg; ^this.primitiveFailed }
@@ -131,26 +130,6 @@ SimpleNumber : Number {
 
 	asInteger { _AsInteger; ^this.primitiveFailed }
 	asFloat { _AsFloat; ^this.primitiveFailed }
-	asComplex { ^Complex.new(this, 0.0) }
-	asRect { ^Rect(this, this, this, this) }
-
-	degrad {
-		// degree * (pi/180)
-		^this * 0.01745329251994329547
-	}
-
-	raddeg {
-		// radian * (180/pi)
-		^this * 57.29577951308232286465
-	}
-
-	performBinaryOpOnSimpleNumber { |aSelector, aNumber, adverb|
-		BinaryOpFailureError(this, aSelector, [aNumber, adverb]).throw;
-	}
-	performBinaryOpOnComplex { |aSelector, aComplex, adverb| ^aComplex.perform(aSelector, this.asComplex, adverb) }
-	performBinaryOpOnSignal { |aSelector, aSignal, adverb|
-		BinaryOpFailureError(this, aSelector, [aSignal, adverb]).throw;
-	}
 
 	nextPowerOfTwo { ^this.nextPowerOf(2) }
 	nextPowerOf { |base| ^pow(base, ceil(log(this) / log(base))) }
@@ -550,14 +529,6 @@ SimpleNumber : Number {
 		^a * (exp(squared(this - b) / (-2.0 * squared(c))))
 	}
 
-	asPoint {
-		^Point.new(this, this)
-	}
-
-	asWarp { |spec|
-		^CurveWarp.new(spec, this)
-	}
-
 	// scheduled Routine support
 	wait { ^this.yield }
 	waitUntil { ^(this - thisThread.beats).max(0).yield }
@@ -576,7 +547,6 @@ SimpleNumber : Number {
 
 
 	rate { ^'scalar' } // scalarRate constant
-	asAudioRateInput { ^if(this == 0) { Silent.ar } { DC.ar(this) } }
 
 	madd  { |mul, add|
 		^(this * mul) + add
@@ -590,10 +560,6 @@ SimpleNumber : Number {
 	lag3ud { ^this }
 	varlag { ^this }
 	slew   { ^this }
-
-	poll { |trig = 10, label, trigid = -1|
-		^Poll(trig, this, label, trigid)
-	}
 
 	// support for writing synth defs
 	writeInputSpec { |file, synth|
@@ -638,8 +604,6 @@ SimpleNumber : Number {
 	}
 
 	playAndDelta {}
-
-	asQuant { ^Quant(this) }
 
 	// a clock format inspired by ISO 8601 time interval display (truncated representation)
 	// receiver is a time in seconds, returns string "ddd:hh:mm:ss.sss"

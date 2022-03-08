@@ -147,45 +147,6 @@ SequenceableCollection : Collection {
 		};
 	}
 
-	prEditDistance { |other, compareFunc|
-		_ArrayLevenshteinDistance
-		// primitive only fails if types cannot be compared
-		^this.prLevenshteinDistance(other, compareFunc);
-	}
-
-	prLevenshteinDistance { |other, compareFunc|
-		// This is the same algorithm as the primitive, just in
-		// sclang to allow equality
-		var matrix = Array.iota(other.size + 1);
-		var upper, corner;
-
-		if(this.isEmpty || other.isEmpty) {
-			^this.size;
-		};
-
-		// use identity if not given another way to compare
-		compareFunc = compareFunc ? { |a, b| a === b; };
-
-		this.size.do { |indX|
-			corner = indX;
-			matrix[0] = indX + 1;
-
-			other.size.do { |indY|
-				upper = matrix[indY + 1];
-
-				matrix[indY + 1] = if(compareFunc.value(this.at(indX), other.at(indY))) {
-					corner;
-				} {
-					[upper, corner, matrix[indY]].minItem + 1;
-				};
-
-				corner = upper;
-			};
-		};
-
-		^matrix[other.size];
-	}
-
 	similarity { |other, compareFunc|
 		var maxDistance = max(this.size, other.size);
 		var simVal = 1; // assume they're the same
@@ -567,21 +528,6 @@ SequenceableCollection : Collection {
 		^list
 	}
  
-	flopTogether { arg ... moreArrays;
-		var standIn, maxSize = 0, array;
-		array = [this] ++ moreArrays;
-		array.do { |sublist|
-			sublist.do { |each|
-				maxSize = max(maxSize, each.size)
-			}
-		};
-		standIn = 0.dup(maxSize);
-		array = array.collect { |sublist| sublist.add(standIn) };
-		^array.collect { |sublist|
-			sublist.flop.collect { |each| each.drop(-1) } // remove stand-in
-		};
-	}
-
 	flopDeep { arg rank;
 		var size, maxsize;
 		if(rank.isNil) { rank = this.maxDepth - 1 };
@@ -1058,8 +1004,6 @@ SequenceableCollection : Collection {
 		^this.collect { |item| item.asFraction(denominator, fasterBetter) }
 	}
 
-	asPoint { ^Point(this[0] ? 0, this[1] ? 0) }
-	asRect { ^Rect(this[0] ? 0, this[1] ? 0, this[2] ? 0, this[3] ? 0) }
 	ascii { ^this.collect { arg item; item.ascii } }
 
 
@@ -1077,8 +1021,6 @@ SequenceableCollection : Collection {
 	multichannelExpandRef { arg rank;
 		^this
 	}
-
-	minNyquist { ^min(this, SampleRate.ir * 0.5) }
 
 	// sorting
 	sort { arg function;
@@ -1108,15 +1050,6 @@ SequenceableCollection : Collection {
 
 	quickSort { arg function;
 		this.quickSortRange(0, this.size - 1, function)
-	}
-	order { arg function;
-		var array, orderFunc;
-		// returns an array of indices that would sort the collection into order.
-		if(this.isEmpty) { ^[] };
-		if (function.isNil) { function = { arg a, b; a <= b }; };
-		array = [this.asArray, (0..this.lastIndex)].flop;
-		orderFunc = {|a,b| function.value(a[0], b[0]) };
-		^array.mergeSort(orderFunc).flop[1]
 	}
 
 	swap { arg i, j;
@@ -1295,50 +1228,6 @@ SequenceableCollection : Collection {
 		}
 	}
 
-	// we break up the array so that missing elements are set to nil in the Quant
-	asQuant { ^Quant(*this) }
-
-	//	asUGenInput { ^this.asArray.asUGenInput }
-
-	// this method could be refactored by dispatching, but we're trying to keep the overhead low.
-
-	schedBundleArrayOnClock { |clock, bundleArray, lag = 0, server, latency|
-
-		// "this" is an array of delta times for the clock (usually in beats)
-		// "lag" is a value or an array of tempo independent absolute lag times (in seconds)
-
-		var sendBundle;
-
-		latency = latency ? server.latency;
-		sendBundle = { |i| server.sendBundle(latency, bundleArray.wrapAt(i)) };
-
-		if (lag != 0) {
-			lag = lag.asArray;
-
-			this.do { |delta, i|
-				if(delta != 0) {
-					// schedule on both clocks
-					clock.sched(delta, {
-						SystemClock.sched(lag.wrapAt(i), { sendBundle.value(i) })
-					})
-				} {
-					// schedule only on the system clock
-					SystemClock.sched(lag.wrapAt(i), { sendBundle.value(i) })
-				}
-			}
-		} {
-			this.do { |delta, i|
-				if(delta != 0) {
-					// schedule only on the clock passed in
-					clock.sched(delta, { sendBundle.value(i) })
-				} {
-					// send directly
-					sendBundle.value(i)
-				}
-			}
-		}
-	}
-
 	unixCmd { arg action, postOutput = true;
 		var pid;
 		if(this.notEmpty) {
@@ -1347,21 +1236,6 @@ SequenceableCollection : Collection {
 				String.unixCmdActions.put(pid, action);
 			};
 			^pid
-		} {
-			Error("Collection should have at least the filepath of the program to run.").throw
-		}
-	}
-
-	unixCmdGetStdOut { arg maxLineLength=1024;
-		var pipe, lines, line, pid;
-
-		if(this.notEmpty) {
-			pipe = Pipe.argv(this, "r");
-			lines = "";
-			line = pipe.getLine(maxLineLength);
-			while({line.notNil}, {lines = lines ++ line ++ "\n"; line = pipe.getLine; });
-			pipe.close;
-			^lines
 		} {
 			Error("Collection should have at least the filepath of the program to run.").throw
 		}

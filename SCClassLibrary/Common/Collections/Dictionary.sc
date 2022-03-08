@@ -82,11 +82,6 @@ Dictionary : Set {
 		this.keysDo({ arg key; set.add(key) });
 		^set
 	}
-	values {
-		var list = List.new(size);
-		this.do({ arg value; list.add(value) });
-		^list
-	}
 
 	// testing
 	includes { arg item1;
@@ -270,16 +265,6 @@ Dictionary : Set {
 		^if(event.isNil) { this } { event.copy.putAll(this) }.yield
 	}
 
-	asSortedArray {
-		var array;
-		if ( this.notEmpty ){
-			this.keysValuesDo({ arg key, value; array = array.add([key,value]); });
-			array = array.sort({ arg a, b; a.at(0) < b.at(0) });
-		}{
-			array = [];
-		};
-		^array;
-	}
 	asKeyValuePairs {
 		var array = Array.new(this.size * 2);
 		this.keysValuesDo { |key, val| array.add(key); array.add(val) };
@@ -496,13 +481,6 @@ IdentityDictionary : Dictionary {
 	freezeAsParent {
 		var frozenParent = this.freeze;
 		^this.class.new(this.size, nil, frozenParent, know)
-	}
-
-	insertParent { arg newParent, insertionDepth = 0, reverseInsertionDepth = inf;
-		if(parent.isNil) { parent = newParent; ^this };
-		if(insertionDepth > 0) { parent.insertParent(newParent, insertionDepth - 1, reverseInsertionDepth); ^this };
-		newParent.insertParent(parent, reverseInsertionDepth, inf); // insert current parent back into new parent
-		parent = newParent;
 	}
 
 	== { arg that;
