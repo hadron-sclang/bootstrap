@@ -31,10 +31,6 @@ Boolean {
 		stream.putAll(this.asCompileString);
 	}
 	archiveAsCompileString { ^true }
-
-	while {
-		^"While was called with a fixed (unchanging) Boolean as the condition. Please supply a Function instead.".error
-	}
 }
 
 True : Boolean {

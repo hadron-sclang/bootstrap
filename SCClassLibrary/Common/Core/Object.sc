@@ -387,13 +387,6 @@ Object  {
 	}
 
 	// looping
-	while { arg body;
-		// compiler magic: the compiler inlines the following loop
-		// thus an uninlinable while can be implemented using while itself
-		while({ this.value }, {
-			body.value
-		});
-	}
 	switch { arg ... cases;
 		cases.pairsDo { | test, trueFunc |
 			if (this == test.value) { ^trueFunc.value };
