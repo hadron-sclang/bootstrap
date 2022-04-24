@@ -112,11 +112,6 @@ UnitTest {
 		}
 	}
 
-	*gui {
-		this.findTestClasses;
-		^UnitTestGUI.new(this.allTestClasses)
-	}
-
 	///////////////////////////////////////////////////////////////////////
 	// call these in your test_ methods to check conditions and pass or fail
 
@@ -350,10 +345,6 @@ UnitTest {
 	}
 
 	// private - use TestYourClass.run
-
-	*forkIfNeeded { |function|
-		function.forkIfNeeded(AppClock)
-	}
 
 	// returns the methods named test_
 	findTestMethods {
