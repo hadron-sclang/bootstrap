@@ -143,12 +143,6 @@ File : UnixFILE {
 	readAllStringHTML {
 		^this.readAllString.stripHTML;
 	}
-	readAllSignal {
-		var signal;
-		signal = Signal.newClear(this.length);
-		this.read(signal);
-		^signal
-	}
 
 	// PRIVATE
 	prOpen { arg pathName, mode;

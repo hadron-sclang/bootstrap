@@ -99,8 +99,6 @@ Scheduler {
 	sched { | delta, item |
 		var fromTime;
 		if (delta.notNil, {
-			fromTime = if (drift, { Main.elapsedTime },{ seconds });
-			queue.put(fromTime + delta, item);
 		});
 	}
 	clear {
@@ -275,8 +273,6 @@ elapsed time is whatever the system clock says it is right now. elapsed time is 
 
 	// for setting the tempo at the current elapsed time.
 	etempo_ { arg newTempo;
-		this.setTempoAtSec(newTempo, Main.elapsedTime);
-		this.changed(\tempo);
 	}
 
 	beats2secs { arg beats;

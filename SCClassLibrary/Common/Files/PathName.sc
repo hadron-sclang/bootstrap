@@ -241,12 +241,6 @@ PathName {
 	}
 
 	dumpToDoc { | title="Untitled" |
-		var str, doc;
-		doc = Document.new(title);
-		str = CollStream.new;
-		this.streamTree(str);
-		doc.string = str.collection;
-		^doc
 	}
 
 }

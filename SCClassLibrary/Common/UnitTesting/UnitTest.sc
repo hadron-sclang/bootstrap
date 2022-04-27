@@ -268,13 +268,6 @@ UnitTest {
 	// if this is called inside a routine, the routine waits until server is booted
 
 	bootServer { | server |
-		server = server ? Server.default;
-		if(server.serverRunning.not) {
-			server.bootSync
-		} {
-			server.freeAll;
-		};
-		server.newAllocators; // new nodes, busses regardless
 	}
 
 	debug { |text|
@@ -408,7 +401,6 @@ UnitTest {
 	}
 
 	s {
-		^Server.default; // for convenient translation to/from example code
 	}
 
 }

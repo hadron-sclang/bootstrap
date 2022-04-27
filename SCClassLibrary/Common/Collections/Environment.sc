@@ -50,13 +50,9 @@ Environment : IdentityDictionary {
 	push { this.class.push(this) }
 
 	linkDoc { arg doc;
-		doc = doc ? Document.current;
-		doc.envir_(this);
 	}
 
 	unlinkDoc { arg doc;
-		doc = doc ? Document.current;
-		if(doc.envir === this) { doc.envir_(nil) };
 	}
 
 }
